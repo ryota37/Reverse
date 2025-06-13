@@ -28,9 +28,17 @@ void DrawStone(const Grid<StoneColor>& boardState)
 			Circle stone{50 + 100*x, 50 + 100 * y, 25};
 			if (boardState[y][x] == StoneColor::Black) stone.draw(Palette::Black);
 			if (boardState[y][x] == StoneColor::White) stone.draw(Palette::White);
-			if (boardState[y][x] == StoneColor::None) stone.draw(Palette::Red); // Debug
+			//if (boardState[y][x] == StoneColor::None) stone.draw(Palette::Red); // Debug
 		}
 	}
+}
+
+void InitializeBoardState(Grid<StoneColor>& boardState)
+{
+	boardState[3][3] = StoneColor::Black;
+	boardState[4][4] = StoneColor::Black;
+	boardState[3][4] = StoneColor::White;
+	boardState[4][3] = StoneColor::White;
 }
 
 void Main()
@@ -39,6 +47,8 @@ void Main()
 
 	Grid<int32> grid(8, 8);
 	Grid<StoneColor> boardState(8, 8, StoneColor::None);
+
+	InitializeBoardState(boardState);
 
 	while (System::Update())
 	{
