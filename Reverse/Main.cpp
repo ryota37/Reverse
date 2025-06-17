@@ -41,6 +41,11 @@ void InitializeBoardState(Grid<StoneColor>& boardState)
 	boardState[4][3] = StoneColor::White;
 }
 
+void PutNewStone(Grid<StoneColor>& boardState, StoneColor color, int x, int y)
+{
+	boardState[x][y] = color;
+}
+
 void Main()
 {
 	Window::Resize(800, 800);
@@ -54,5 +59,7 @@ void Main()
 	{
 		DrawGrid(grid);
 		DrawStone(boardState);
+
+		PutNewStone(boardState, StoneColor::Black, 0, 0); //Debug
 	}
 }
