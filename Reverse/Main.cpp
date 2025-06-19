@@ -1,14 +1,22 @@
 ﻿# include <Siv3D.hpp>
 
-void DrawGrid(const Grid<int32>& grid)
+void CreateGridContainer(const Grid<int32>& grid, Array<RectF>& gridContainer)
 {
 	for (int32 y = 0; y < grid.height(); ++y)
 	{
 		for (int32 x = 0; x < grid.width(); ++x)
 		{
 			const RectF rect{ (x * 100), (y * 100), 100 };
-			rect.stretched(-1).draw(Palette::Green);
+			gridContainer.push_back(rect);
 		}
+	}
+}
+
+void DrawGrid(Array<RectF>& gridContainer)
+{
+	for (auto& rect : gridContainer)
+	{
+		rect.stretched(-1).draw(Palette::Green);
 	}
 }
 
@@ -43,7 +51,13 @@ void InitializeBoardState(Grid<StoneColor>& boardState)
 
 void PutNewStone(Grid<StoneColor>& boardState, StoneColor color, int x, int y)
 {
-	boardState[x][y] = color;
+	boardState[y][x] = color;
+}
+
+bool isGridEmpty(Grid<StoneColor>& boardState, int x, int y)
+{
+	if (boardState[y][x] == StoneColor::Black) return true;
+	return false;
 }
 
 void Main()
@@ -52,14 +66,16 @@ void Main()
 
 	Grid<int32> grid(8, 8);
 	Grid<StoneColor> boardState(8, 8, StoneColor::None);
+	Array<RectF> gridContainer;
 
+	CreateGridContainer(grid, gridContainer);
 	InitializeBoardState(boardState);
 
 	while (System::Update())
 	{
-		DrawGrid(grid);
+		DrawGrid(gridContainer);
 		DrawStone(boardState);
 
-		PutNewStone(boardState, StoneColor::Black, 0, 0); //Debug
+		PutNewStone(boardState, StoneColor::Black, 1, 2); //Debug
 	}
 }
