@@ -1,22 +1,25 @@
 ﻿# include <Siv3D.hpp>
 
-void CreateGridContainer(const Grid<int32>& grid, Array<RectF>& gridContainer)
+void CreateGridContainer(const Grid<int32>& grid, Grid<RectF>& gridContainer)
+{
+	for (int y = 0; y < grid.height(); ++y)
+	{
+		for (int x = 0; x < grid.width(); ++x)
+		{
+			const RectF rect{ (x * 100), (y * 100), 100 };
+			gridContainer[y][x] = rect;
+		}
+	}
+}
+
+void DrawGrid(const Grid<int32>& grid, const Grid<RectF>& gridContainer)
 {
 	for (int32 y = 0; y < grid.height(); ++y)
 	{
 		for (int32 x = 0; x < grid.width(); ++x)
 		{
-			const RectF rect{ (x * 100), (y * 100), 100 };
-			gridContainer.push_back(rect);
+			gridContainer[y][x].stretched(-1).draw(Palette::Green);
 		}
-	}
-}
-
-void DrawGrid(Array<RectF>& gridContainer)
-{
-	for (auto& rect : gridContainer)
-	{
-		rect.stretched(-1).draw(Palette::Green);
 	}
 }
 
@@ -56,8 +59,22 @@ void PutNewStone(Grid<StoneColor>& boardState, StoneColor color, int x, int y)
 
 bool isGridEmpty(Grid<StoneColor>& boardState, int x, int y)
 {
-	if (boardState[y][x] == StoneColor::Black) return true;
+	if (boardState[y][x] == StoneColor::None) return true;
 	return false;
+}
+
+void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
+{
+	for (int32 y = 0; y < gridContainer.height(); ++y)
+	{
+		for (int32 x = 0; x < gridContainer.width(); ++x)
+		{
+			if (isGridEmpty(boardState, x, y) && gridContainer[y][x].leftClicked())
+			{
+				PutNewStone(boardState, StoneColor::White, x, y); //Debug
+			}
+		}
+	}
 }
 
 void Main()
@@ -66,16 +83,17 @@ void Main()
 
 	Grid<int32> grid(8, 8);
 	Grid<StoneColor> boardState(8, 8, StoneColor::None);
-	Array<RectF> gridContainer;
+	Grid<RectF> gridContainer(8,8);
 
 	CreateGridContainer(grid, gridContainer);
 	InitializeBoardState(boardState);
 
 	while (System::Update())
 	{
-		DrawGrid(gridContainer);
+		DrawGrid(grid,gridContainer);
 		DrawStone(boardState);
 
 		PutNewStone(boardState, StoneColor::Black, 1, 2); //Debug
+		PutNewStoneWhenClicked(boardState, gridContainer);
 	}
 }
