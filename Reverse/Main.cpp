@@ -63,19 +63,62 @@ bool isGridEmpty(Grid<StoneColor>& boardState, int x, int y)
 	return false;
 }
 
-void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
+Optional<Vec2> onGridLeftClick(Grid<RectF>& gridContainer)
 {
 	for (int32 y = 0; y < gridContainer.height(); ++y)
 	{
 		for (int32 x = 0; x < gridContainer.width(); ++x)
 		{
-			if (isGridEmpty(boardState, x, y) && gridContainer[y][x].leftClicked())
-			{
-				PutNewStone(boardState, StoneColor::White, x, y); //Debug
-			}
+			if (gridContainer[y][x].leftClicked()) return Vec2{ x,y };
+		}
+	}
+	return none;
+}
+
+Optional<Vec2> onGridRightClick(Grid<RectF>& gridContainer)
+{
+	for (int32 y = 0; y < gridContainer.height(); ++y)
+	{
+		for (int32 x = 0; x < gridContainer.width(); ++x)
+		{
+			if (gridContainer[y][x].rightClicked()) return Vec2{ x,y };
+		}
+	}
+	return none;
+}
+
+void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
+{
+	if (auto clicked = onGridLeftClick(gridContainer))
+	{
+		Vec2 pos = *clicked;
+		if (isGridEmpty(boardState, pos.x, pos.y))
+		{
+			PutNewStone(boardState, StoneColor::White, pos.x, pos.y); //Debug
 		}
 	}
 }
+
+void UpperSearch(Grid<StoneColor>& boardState, int x, int y)
+{
+
+}
+
+// A function for debugging
+void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
+{
+	if (auto clicked = onGridRightClick(gridContainer))
+	{
+		Vec2 pos = *clicked;
+		if (isGridEmpty(boardState, pos.x, pos.y))
+		{
+			//PutNewStone(boardState, StoneColor::Black, pos.x, pos.y); //Debug
+
+		}
+	}
+}
+
+
 
 void Main()
 {
@@ -93,7 +136,7 @@ void Main()
 		DrawGrid(grid,gridContainer);
 		DrawStone(boardState);
 
-		PutNewStone(boardState, StoneColor::Black, 1, 2); //Debug
 		PutNewStoneWhenClicked(boardState, gridContainer);
+		RightClickEvent(boardState, gridContainer);
 	}
 }
