@@ -101,7 +101,23 @@ void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridConta
 
 void UpperSearch(Grid<StoneColor>& boardState, int x, int y)
 {
+	Array<StoneColor> stoneColorOfLine;
 
+	while (y > 0)
+	{
+		stoneColorOfLine << boardState[y - 1][x];
+		y--;
+	}
+
+	for (auto cell : stoneColorOfLine)
+	{
+		if (cell == StoneColor::Black) { Print << U"Black"; }
+		if (cell == StoneColor::White) { Print << U"White"; }
+		if (cell == StoneColor::None) { Print << U"None"; }
+	}
+
+	// future impl plan
+	// return stoneColorOfLine;
 }
 
 // A function for debugging
@@ -113,7 +129,8 @@ void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
 		if (isGridEmpty(boardState, pos.x, pos.y))
 		{
 			//PutNewStone(boardState, StoneColor::Black, pos.x, pos.y); //Debug
-
+			//Call UpperSearch after I finish implementing
+			UpperSearch(boardState, pos.x, pos.y);
 		}
 	}
 }
