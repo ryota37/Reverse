@@ -99,28 +99,66 @@ void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridConta
 	}
 }
 
-void UpperSearch(Grid<StoneColor>& boardState, int x, int y)
+Array<StoneColor> GetLineStones(const Grid<StoneColor>& boardState, int x, int y, int dx, int dy)
 {
-	Array<StoneColor> stoneColorOfLine;
+	Array<StoneColor> result;
+	int width = boardState.width();
+	int height = boardState.height();
 
-	while (y > 0)
+	x += dx;
+	y += dy;
+
+	while (0 <= x && x < width && 0 <= y && y < height)
 	{
-		stoneColorOfLine << boardState[y - 1][x];
-		y--;
+		result << boardState[y][x];
+		x += dx;
+		y += dy;
 	}
 
-	for (auto cell : stoneColorOfLine)
-	{
-		if (cell == StoneColor::Black) { Print << U"Black"; }
-		if (cell == StoneColor::White) { Print << U"White"; }
-		if (cell == StoneColor::None) { Print << U"None"; }
-	}
-
-	// future impl plan
-	// return stoneColorOfLine;
+	return result;
 }
 
-// A function for debugging
+String ToString(StoneColor color)
+{
+	switch (color)
+	{
+	case StoneColor::Black: return U"Black";
+	case StoneColor::White: return U"White";
+	case StoneColor::None: return U"None";
+	}
+}
+
+void SearchAllDirections(const Grid<StoneColor>& boardState, int x, int y)
+{
+	auto up = GetLineStones(boardState, x, y, 0, -1);
+	auto down = GetLineStones(boardState, x, y, 0, 1);
+	auto left = GetLineStones(boardState, x, y, -1, 0);
+	auto right = GetLineStones(boardState, x, y, 1, 0);
+
+	auto upleft = GetLineStones(boardState, x, y, -1, -1);
+	auto upright = GetLineStones(boardState, x, y, 1, -1);
+	auto downleft = GetLineStones(boardState, x, y, -1, 1);
+	auto downright = GetLineStones(boardState, x, y, 1, 1);
+
+	Print << U"Up:";
+	for (auto cell : up) Print << ToString(cell);
+	Print << U"Down:";
+	for (auto cell : down) Print << ToString(cell);
+	Print << U"Left:";
+	for (auto cell : left) Print << ToString(cell);
+	Print << U"Right:";
+	for (auto cell : right) Print << ToString(cell);
+
+	Print << U"Upleft:";
+	for (auto cell : upleft) Print << ToString(cell);
+	Print << U"Uprihgt:";
+	for (auto cell : upright) Print << ToString(cell);
+	Print << U"Downleft:";
+	for (auto cell : downleft) Print << ToString(cell);
+	Print << U"Downright:";
+	for (auto cell : downright) Print << ToString(cell);
+}
+
 void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
 {
 	if (auto clicked = onGridRightClick(gridContainer))
@@ -130,7 +168,7 @@ void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
 		{
 			//PutNewStone(boardState, StoneColor::Black, pos.x, pos.y); //Debug
 			//Call UpperSearch after I finish implementing
-			UpperSearch(boardState, pos.x, pos.y);
+			SearchAllDirections(boardState, pos.x, pos.y);
 		}
 	}
 }
