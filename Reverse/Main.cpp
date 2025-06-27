@@ -30,6 +30,13 @@ enum class StoneColor
 	White
 };
 
+StoneColor reverseColor(StoneColor color)
+{
+	if (color == StoneColor::None) return StoneColor::None;
+	if (color == StoneColor::Black) return StoneColor::White;
+	if (color == StoneColor::White) return StoneColor::Black;
+}
+
 void DrawStone(const Grid<StoneColor>& boardState)
 {
 	for (int y = 0; y < boardState.height(); ++y)
@@ -140,23 +147,23 @@ void SearchAllDirections(const Grid<StoneColor>& boardState, int x, int y)
 	auto downleft = GetLineStones(boardState, x, y, -1, 1);
 	auto downright = GetLineStones(boardState, x, y, 1, 1);
 
-	Print << U"Up:";
-	for (auto cell : up) Print << ToString(cell);
-	Print << U"Down:";
-	for (auto cell : down) Print << ToString(cell);
-	Print << U"Left:";
-	for (auto cell : left) Print << ToString(cell);
-	Print << U"Right:";
-	for (auto cell : right) Print << ToString(cell);
+	//Print << U"Up:";
+	//for (auto cell : up) Print << ToString(cell);
+	//Print << U"Down:";
+	//for (auto cell : down) Print << ToString(cell);
+	//Print << U"Left:";
+	//for (auto cell : left) Print << ToString(cell);
+	//Print << U"Right:";
+	//for (auto cell : right) Print << ToString(cell);
 
-	Print << U"Upleft:";
-	for (auto cell : upleft) Print << ToString(cell);
-	Print << U"Uprihgt:";
-	for (auto cell : upright) Print << ToString(cell);
-	Print << U"Downleft:";
-	for (auto cell : downleft) Print << ToString(cell);
-	Print << U"Downright:";
-	for (auto cell : downright) Print << ToString(cell);
+	//Print << U"Upleft:";
+	//for (auto cell : upleft) Print << ToString(cell);
+	//Print << U"Uprihgt:";
+	//for (auto cell : upright) Print << ToString(cell);
+	//Print << U"Downleft:";
+	//for (auto cell : downleft) Print << ToString(cell);
+	//Print << U"Downright:";
+	//for (auto cell : downright) Print << ToString(cell);
 }
 
 void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
@@ -166,13 +173,54 @@ void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
 		Vec2 pos = *clicked;
 		if (isGridEmpty(boardState, pos.x, pos.y))
 		{
-			//PutNewStone(boardState, StoneColor::Black, pos.x, pos.y); //Debug
-			//Call UpperSearch after I finish implementing
 			SearchAllDirections(boardState, pos.x, pos.y);
 		}
 	}
 }
 
+bool AbleToPutStone(StoneColor playercolor, Array<StoneColor> linestones)
+{
+	// If the neighboring stone color is the same as playercolor, the return value should be false.
+	if (linestones[0] != reverseColor(playercolor)) return false;
+
+	// When all the stones are reverse color, the return value should be false because the stones can't be sandwitched.
+	if (linestones.all([&](const StoneColor& color) { return color == reverseColor(playercolor); })) return false;
+
+	// When None comes before reverseColor(playercolor), the return value should be false.
+	for (int i = 0; i < linestones.size(); ++i)
+	{
+		if (linestones[i] == playercolor) break;
+		if (linestones[i] == StoneColor::None) return false;
+	}
+
+	return true;
+}
+
+// Test
+void testAbleToPutStone()
+{
+	Print << U"Testing AbleToPutStone function...";
+
+	Array<StoneColor> line1 = {StoneColor::White, StoneColor::White, StoneColor::Black};
+	Print << U"Test 1: " << (AbleToPutStone(StoneColor::Black, line1) ? U"PASS" : U"FAIL") << U" - Black can place when line has White-White-Black";
+
+	Array<StoneColor> line2 = {StoneColor::Black, StoneColor::Black, StoneColor::White};
+	Print << U"Test 2: " << (AbleToPutStone(StoneColor::White, line2) ? U"PASS" : U"FAIL") << U" - White can place when line has Black-Black-White";
+
+	Array<StoneColor> line3 = {StoneColor::Black, StoneColor::White, StoneColor::Black};
+	Print << U"Test 3: " << (!AbleToPutStone(StoneColor::Black, line3) ? U"PASS" : U"FAIL") << U" - Black cannot place when first stone is Black";
+
+	Array<StoneColor> line4 = {StoneColor::White, StoneColor::White, StoneColor::White};
+	Print << U"Test 4: " << (!AbleToPutStone(StoneColor::Black, line4) ? U"PASS" : U"FAIL") << U" - Black cannot place when all stones are White";
+
+	Array<StoneColor> line5 = { StoneColor::White, StoneColor::Black };
+	Print << U"Test 5: " << (AbleToPutStone(StoneColor::Black, line5) ? U"PASS" : U"FAIL") << U" - Black can place with single White stone followed by Black";
+
+	Array<StoneColor> line6 = { StoneColor::White, StoneColor::White,StoneColor::None, StoneColor::Black };
+	Print << U"Test 6: " << (!AbleToPutStone(StoneColor::Black, line6) ? U"PASS" : U"FAIL") << U" - Black cannot place when None blocks the Black";
+
+	Print << U"AbleToPutStone tests completed!";
+}
 
 
 void Main()
@@ -193,5 +241,11 @@ void Main()
 
 		PutNewStoneWhenClicked(boardState, gridContainer);
 		RightClickEvent(boardState, gridContainer);
+
+		// Test
+		if (KeyT.down())
+		{
+			testAbleToPutStone();
+		}
 	}
 }
