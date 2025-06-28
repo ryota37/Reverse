@@ -135,7 +135,7 @@ String ToString(StoneColor color)
 	}
 }
 
-void SearchAllDirections(const Grid<StoneColor>& boardState, int x, int y)
+Array<Array<StoneColor>> SearchAllDirections(const Grid<StoneColor>& boardState, int x, int y)
 {
 	auto up = GetLineStones(boardState, x, y, 0, -1);
 	auto down = GetLineStones(boardState, x, y, 0, 1);
@@ -146,6 +146,8 @@ void SearchAllDirections(const Grid<StoneColor>& boardState, int x, int y)
 	auto upright = GetLineStones(boardState, x, y, 1, -1);
 	auto downleft = GetLineStones(boardState, x, y, -1, 1);
 	auto downright = GetLineStones(boardState, x, y, 1, 1);
+
+	return { up,down,left,right,upleft,upright,downleft,downright };
 
 	//Print << U"Up:";
 	//for (auto cell : up) Print << ToString(cell);
@@ -180,6 +182,8 @@ void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
 
 bool AbleToPutStone(StoneColor playercolor, Array<StoneColor> linestones)
 {
+	if (linestones.isEmpty()) return false;
+
 	// If the neighboring stone color is the same as playercolor, the return value should be false.
 	if (linestones[0] != reverseColor(playercolor)) return false;
 
@@ -194,6 +198,22 @@ bool AbleToPutStone(StoneColor playercolor, Array<StoneColor> linestones)
 	}
 
 	return true;
+}
+
+void HighlightValidgrid(const Grid<int32>& grid, const Grid<StoneColor>& boardState, const Grid<RectF>& gridContainer, StoneColor playercolor)
+{
+	for (int32 y = 0; y < grid.height(); ++y)
+	{
+		for (int32 x = 0; x < grid.width(); ++x)
+		{
+			auto search_result = SearchAllDirections(boardState, x, y);
+			if (search_result.any([&](Array<StoneColor> line) {return AbleToPutStone(playercolor, line); }))
+			{
+				if (playercolor == StoneColor::White) gridContainer[y][x].stretched(-1).draw(Palette::Green.lerp(Palette::White, 0.5));
+				if (playercolor == StoneColor::Black) gridContainer[y][x].stretched(-1).draw(Palette::Green.lerp(Palette::Black, 0.5));
+			}
+		}
+	}
 }
 
 // Test
@@ -241,6 +261,9 @@ void Main()
 
 		PutNewStoneWhenClicked(boardState, gridContainer);
 		RightClickEvent(boardState, gridContainer);
+
+		HighlightValidgrid(grid, boardState, gridContainer, StoneColor::Black);
+		HighlightValidgrid(grid, boardState, gridContainer, StoneColor::White);
 
 		// Test
 		if (KeyT.down())
