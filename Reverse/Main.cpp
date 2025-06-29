@@ -1,5 +1,14 @@
 ﻿# include <Siv3D.hpp>
 
+enum class StoneColor
+{
+	None,
+	Black,
+	White
+};
+
+bool CanPutStoneOnGrid(int, int, const Grid<StoneColor>&, StoneColor);
+
 void CreateGridContainer(const Grid<int32>& grid, Grid<RectF>& gridContainer)
 {
 	for (int y = 0; y < grid.height(); ++y)
@@ -22,13 +31,6 @@ void DrawGrid(const Grid<int32>& grid, const Grid<RectF>& gridContainer)
 		}
 	}
 }
-
-enum class StoneColor
-{
-	None,
-	Black,
-	White
-};
 
 StoneColor reverseColor(StoneColor color)
 {
@@ -99,9 +101,9 @@ void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridConta
 	if (auto clicked = onGridLeftClick(gridContainer))
 	{
 		Vec2 pos = *clicked;
-		if (isGridEmpty(boardState, pos.x, pos.y))
+		if (isGridEmpty(boardState, pos.x, pos.y) && CanPutStoneOnGrid(pos.x, pos.y, boardState, StoneColor::White) ) // playercolor is pareliminary
 		{
-			PutNewStone(boardState, StoneColor::White, pos.x, pos.y); //Debug
+			PutNewStone(boardState, StoneColor::White, pos.x, pos.y); //playercolor is preliminary
 		}
 	}
 }
@@ -148,24 +150,6 @@ Array<Array<StoneColor>> SearchAllDirections(const Grid<StoneColor>& boardState,
 	auto downright = GetLineStones(boardState, x, y, 1, 1);
 
 	return { up,down,left,right,upleft,upright,downleft,downright };
-
-	//Print << U"Up:";
-	//for (auto cell : up) Print << ToString(cell);
-	//Print << U"Down:";
-	//for (auto cell : down) Print << ToString(cell);
-	//Print << U"Left:";
-	//for (auto cell : left) Print << ToString(cell);
-	//Print << U"Right:";
-	//for (auto cell : right) Print << ToString(cell);
-
-	//Print << U"Upleft:";
-	//for (auto cell : upleft) Print << ToString(cell);
-	//Print << U"Uprihgt:";
-	//for (auto cell : upright) Print << ToString(cell);
-	//Print << U"Downleft:";
-	//for (auto cell : downleft) Print << ToString(cell);
-	//Print << U"Downright:";
-	//for (auto cell : downright) Print << ToString(cell);
 }
 
 void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
@@ -216,6 +200,13 @@ void HighlightValidgrid(const Grid<int32>& grid, const Grid<StoneColor>& boardSt
 	}
 }
 
+bool CanPutStoneOnGrid(int x, int y, const Grid<StoneColor>& boardState, StoneColor playercolor)
+{
+	auto search_result = SearchAllDirections(boardState, x, y);
+	if (search_result.any([&](Array<StoneColor> line) {return AbleToPutStone(playercolor, line); })) return true;
+	return false;
+}
+
 // Test
 void testAbleToPutStone()
 {
@@ -242,7 +233,6 @@ void testAbleToPutStone()
 	Print << U"AbleToPutStone tests completed!";
 }
 
-
 void Main()
 {
 	Window::Resize(800, 800);
@@ -257,13 +247,16 @@ void Main()
 	while (System::Update())
 	{
 		DrawGrid(grid,gridContainer);
-		DrawStone(boardState);
 
 		PutNewStoneWhenClicked(boardState, gridContainer);
+		// After putting a new stone, the grid color should back to the normal green.
+
 		RightClickEvent(boardState, gridContainer);
 
 		HighlightValidgrid(grid, boardState, gridContainer, StoneColor::Black);
 		HighlightValidgrid(grid, boardState, gridContainer, StoneColor::White);
+
+		DrawStone(boardState);
 
 		// Test
 		if (KeyT.down())
