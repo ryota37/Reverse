@@ -190,6 +190,7 @@ void HighlightValidgrid(const Grid<int32>& grid, const Grid<StoneColor>& boardSt
 	{
 		for (int32 x = 0; x < grid.width(); ++x)
 		{
+			if (boardState[y][x] != StoneColor::None) continue;
 			auto search_result = SearchAllDirections(boardState, x, y);
 			if (search_result.any([&](Array<StoneColor> line) {return AbleToPutStone(playercolor, line); }))
 			{
