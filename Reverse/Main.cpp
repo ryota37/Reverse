@@ -8,6 +8,8 @@ enum class StoneColor
 };
 
 bool CanPutStoneOnGrid(int, int, const Grid<StoneColor>&, StoneColor);
+void SwitchPlayerTurn(StoneColor&);
+
 
 void CreateGridContainer(const Grid<int32>& grid, Grid<RectF>& gridContainer)
 {
@@ -96,14 +98,15 @@ Optional<Vec2> onGridRightClick(Grid<RectF>& gridContainer)
 	return none;
 }
 
-void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
+void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer, StoneColor& playercolor)
 {
 	if (auto clicked = onGridLeftClick(gridContainer))
 	{
 		Vec2 pos = *clicked;
-		if (isGridEmpty(boardState, pos.x, pos.y) && CanPutStoneOnGrid(pos.x, pos.y, boardState, StoneColor::White) ) // playercolor is pareliminary
+		if (isGridEmpty(boardState, pos.x, pos.y) && CanPutStoneOnGrid(pos.x, pos.y, boardState, playercolor) )
 		{
-			PutNewStone(boardState, StoneColor::White, pos.x, pos.y); //playercolor is preliminary
+			PutNewStone(boardState, playercolor, pos.x, pos.y);
+			SwitchPlayerTurn(playercolor);
 		}
 	}
 }
@@ -208,6 +211,11 @@ bool CanPutStoneOnGrid(int x, int y, const Grid<StoneColor>& boardState, StoneCo
 	return false;
 }
 
+void SwitchPlayerTurn(StoneColor& playercolor)
+{
+	playercolor = reverseColor(playercolor);
+}
+
 // Test
 void testAbleToPutStone()
 {
@@ -242,21 +250,17 @@ void Main()
 	Grid<StoneColor> boardState(8, 8, StoneColor::None);
 	Grid<RectF> gridContainer(8,8);
 
+	StoneColor playercolor = StoneColor::White; // Preliminary
+
 	CreateGridContainer(grid, gridContainer);
 	InitializeBoardState(boardState);
 
 	while (System::Update())
 	{
 		DrawGrid(grid,gridContainer);
-
-		PutNewStoneWhenClicked(boardState, gridContainer);
-		// After putting a new stone, the grid color should back to the normal green.
-
+		PutNewStoneWhenClicked(boardState, gridContainer, playercolor);
 		RightClickEvent(boardState, gridContainer);
-
-		HighlightValidgrid(grid, boardState, gridContainer, StoneColor::Black);
-		HighlightValidgrid(grid, boardState, gridContainer, StoneColor::White);
-
+		HighlightValidgrid(grid, boardState, gridContainer, playercolor);
 		DrawStone(boardState);
 
 		// Test
