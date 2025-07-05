@@ -7,9 +7,22 @@ enum class StoneColor
 	White
 };
 
+enum class Direction
+{
+	Up,
+	Down,
+	Left,
+	Right,
+	Upleft,
+	Upright,
+	Downleft,
+	Downright
+};
+
 bool CanPutStoneOnGrid(int, int, const Grid<StoneColor>&, StoneColor);
 void SwitchPlayerTurn(StoneColor&);
-
+Array<Array<StoneColor>> SearchAllDirections(const Grid<StoneColor>& boardState, int x, int y);
+bool AbleToPutStone(StoneColor playercolor, Array<StoneColor> linestones);
 
 void CreateGridContainer(const Grid<int32>& grid, Grid<RectF>& gridContainer)
 {
@@ -98,6 +111,54 @@ Optional<Vec2> onGridRightClick(Grid<RectF>& gridContainer)
 	return none;
 }
 
+void ReverseLine(Grid<StoneColor>& boardState, StoneColor playercolor, int x, int y, Direction direction)
+{
+	int width = boardState.width();
+	int height = boardState.height();
+	int dx, dy;
+
+	if (direction == Direction::Up) { dx = 0; dy = -1; }
+	if (direction == Direction::Down) { dx = 0; dy = 1; }
+	if (direction == Direction::Left) { dx = -1; dy = 0; }
+	if (direction == Direction::Right) { dx = 1; dy = 0; }
+	if (direction == Direction::Upleft) { dx = -1; dy = -1; }
+	if (direction == Direction::Upright) { dx = 1; dy = -1; }
+	if (direction == Direction::Downleft) { dx = -1; dy = 1; }
+	if (direction == Direction::Downright) { dx = 1; dy = 1; }
+
+	x += dx;
+	y += dy;
+
+	while (0 <= x && x < width && 0 <= y && y < height)
+	{
+		// Reverse Stones
+		boardState[y][x] = playercolor;
+
+		// Stop when sandwitch zone ends
+		if (x + dx == -1 || x + dx == 8) break;
+		if (y + dy == -1 || y + dy == 8) break;
+		if (boardState[y + dy][x + dx] == playercolor) break;
+
+		x += dx;
+		y += dy;
+	}
+}
+
+void ReverseStones(Grid<StoneColor>& boardState, StoneColor& playercolor, int x, int y)
+{
+	auto search_result = SearchAllDirections(boardState, x, y);
+	int i = 0;
+	for (auto line : search_result)
+	{
+		if (AbleToPutStone(playercolor, line))
+		{
+			Direction direction = static_cast<Direction>(i);
+			ReverseLine(boardState, playercolor, x, y, direction);
+		}
+		++i;
+	}
+}
+
 void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer, StoneColor& playercolor)
 {
 	if (auto clicked = onGridLeftClick(gridContainer))
@@ -106,6 +167,7 @@ void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridConta
 		if (isGridEmpty(boardState, pos.x, pos.y) && CanPutStoneOnGrid(pos.x, pos.y, boardState, playercolor) )
 		{
 			PutNewStone(boardState, playercolor, pos.x, pos.y);
+			ReverseStones(boardState, playercolor, pos.x, pos.y);
 			SwitchPlayerTurn(playercolor);
 		}
 	}
@@ -162,7 +224,9 @@ void RightClickEvent(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer)
 		Vec2 pos = *clicked;
 		if (isGridEmpty(boardState, pos.x, pos.y))
 		{
-			SearchAllDirections(boardState, pos.x, pos.y);
+			// Debug
+			ReverseLine(boardState, StoneColor::Black, pos.x, pos.y, Direction::Down);
+			Print << U"Right Clicked!"; 
 		}
 	}
 }
@@ -214,32 +278,9 @@ bool CanPutStoneOnGrid(int x, int y, const Grid<StoneColor>& boardState, StoneCo
 void SwitchPlayerTurn(StoneColor& playercolor)
 {
 	playercolor = reverseColor(playercolor);
-}
 
-// Test
-void testAbleToPutStone()
-{
-	Print << U"Testing AbleToPutStone function...";
+	// If a player can put no stones, skip the player.
 
-	Array<StoneColor> line1 = {StoneColor::White, StoneColor::White, StoneColor::Black};
-	Print << U"Test 1: " << (AbleToPutStone(StoneColor::Black, line1) ? U"PASS" : U"FAIL") << U" - Black can place when line has White-White-Black";
-
-	Array<StoneColor> line2 = {StoneColor::Black, StoneColor::Black, StoneColor::White};
-	Print << U"Test 2: " << (AbleToPutStone(StoneColor::White, line2) ? U"PASS" : U"FAIL") << U" - White can place when line has Black-Black-White";
-
-	Array<StoneColor> line3 = {StoneColor::Black, StoneColor::White, StoneColor::Black};
-	Print << U"Test 3: " << (!AbleToPutStone(StoneColor::Black, line3) ? U"PASS" : U"FAIL") << U" - Black cannot place when first stone is Black";
-
-	Array<StoneColor> line4 = {StoneColor::White, StoneColor::White, StoneColor::White};
-	Print << U"Test 4: " << (!AbleToPutStone(StoneColor::Black, line4) ? U"PASS" : U"FAIL") << U" - Black cannot place when all stones are White";
-
-	Array<StoneColor> line5 = { StoneColor::White, StoneColor::Black };
-	Print << U"Test 5: " << (AbleToPutStone(StoneColor::Black, line5) ? U"PASS" : U"FAIL") << U" - Black can place with single White stone followed by Black";
-
-	Array<StoneColor> line6 = { StoneColor::White, StoneColor::White,StoneColor::None, StoneColor::Black };
-	Print << U"Test 6: " << (!AbleToPutStone(StoneColor::Black, line6) ? U"PASS" : U"FAIL") << U" - Black cannot place when None blocks the Black";
-
-	Print << U"AbleToPutStone tests completed!";
 }
 
 void Main()
@@ -263,10 +304,7 @@ void Main()
 		HighlightValidgrid(grid, boardState, gridContainer, playercolor);
 		DrawStone(boardState);
 
-		// Test
-		if (KeyT.down())
-		{
-			testAbleToPutStone();
-		}
+		// When the game ends, count the number of stones and judge that which player wins.
+
 	}
 }
