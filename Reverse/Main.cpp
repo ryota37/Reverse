@@ -20,9 +20,10 @@ enum class Direction
 };
 
 bool CanPutStoneOnGrid(int, int, const Grid<StoneColor>&, StoneColor);
-void SwitchPlayerTurn(StoneColor&);
+void SwitchPlayerTurn(StoneColor& playercolor);
 Array<Array<StoneColor>> SearchAllDirections(const Grid<StoneColor>& boardState, int x, int y);
 bool AbleToPutStone(StoneColor playercolor, Array<StoneColor> linestones);
+bool JudgeWhetherGameEnds(Grid<StoneColor>& boardState);
 
 void CreateGridContainer(const Grid<int32>& grid, Grid<RectF>& gridContainer)
 {
@@ -70,10 +71,10 @@ void DrawStone(const Grid<StoneColor>& boardState)
 
 void InitializeBoardState(Grid<StoneColor>& boardState)
 {
-	boardState[3][3] = StoneColor::Black;
-	boardState[4][4] = StoneColor::Black;
-	boardState[3][4] = StoneColor::White;
-	boardState[4][3] = StoneColor::White;
+	boardState[3][3] = StoneColor::White;
+	boardState[4][4] = StoneColor::White;
+	boardState[3][4] = StoneColor::Black;
+	boardState[4][3] = StoneColor::Black;
 }
 
 void PutNewStone(Grid<StoneColor>& boardState, StoneColor color, int x, int y)
@@ -159,7 +160,7 @@ void ReverseStones(Grid<StoneColor>& boardState, StoneColor& playercolor, int x,
 	}
 }
 
-void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer, StoneColor& playercolor)
+void PutNewStoneWhenClicked(Grid<StoneColor>& boardState, Grid<RectF>& gridContainer, StoneColor& playercolor, Grid<int32> grid)
 {
 	if (auto clicked = onGridLeftClick(gridContainer))
 	{
@@ -278,9 +279,42 @@ bool CanPutStoneOnGrid(int x, int y, const Grid<StoneColor>& boardState, StoneCo
 void SwitchPlayerTurn(StoneColor& playercolor)
 {
 	playercolor = reverseColor(playercolor);
+}
 
-	// If a player can put no stones, skip the player.
+bool JudgeWhetherGameEnds(Grid<StoneColor>& boardState)
+{
+	// When all grids are occupied by stones, end game
+	bool isAllGridOccupied = std::all_of(boardState.begin(), boardState.end(), [&](StoneColor color)
+		{
+			return color == StoneColor::Black || color == StoneColor::White;
+		});
+	if (isAllGridOccupied) return true;
 
+	// When All the stones are (Black/White) or None, end game
+	bool nowhite = std::all_of(boardState.begin(), boardState.end(), [&](StoneColor color) { return color != StoneColor::White; });
+	bool noblack = std::all_of(boardState.begin(), boardState.end(), [&](StoneColor color) { return color != StoneColor::Black; });
+	if (nowhite || noblack)
+	{
+		return true;
+	}
+	return false;
+}
+
+void DisplayStones(Grid<StoneColor>& boardState)
+{
+	int blackstones = 0;
+	int whitestones = 0;
+	for (auto cell : boardState)
+	{
+		if (cell == StoneColor::Black) { ++blackstones; }
+		if (cell == StoneColor::White) { ++whitestones; }
+	}
+
+	Print << U"Black: " << blackstones;
+	Print << U"White: " << whitestones;
+	if (blackstones > whitestones) { Print << U"Black wins!"; }
+	else if (whitestones > blackstones) { Print << U"White wins!"; }
+	else { Print << U"Draw."; }
 }
 
 void Main()
@@ -291,7 +325,7 @@ void Main()
 	Grid<StoneColor> boardState(8, 8, StoneColor::None);
 	Grid<RectF> gridContainer(8,8);
 
-	StoneColor playercolor = StoneColor::White; // Preliminary
+	StoneColor playercolor = StoneColor::Black; // Preliminary
 
 	CreateGridContainer(grid, gridContainer);
 	InitializeBoardState(boardState);
@@ -299,12 +333,18 @@ void Main()
 	while (System::Update())
 	{
 		DrawGrid(grid,gridContainer);
-		PutNewStoneWhenClicked(boardState, gridContainer, playercolor);
+		PutNewStoneWhenClicked(boardState, gridContainer, playercolor, grid);
 		RightClickEvent(boardState, gridContainer);
 		HighlightValidgrid(grid, boardState, gridContainer, playercolor);
 		DrawStone(boardState);
 
-		// When the game ends, count the number of stones and judge that which player wins.
+		// When a player can put no stone, press S to skip the player.
+		if (KeyS.pressed()) SwitchPlayerTurn(playercolor);
 
+		// When the game ends, count the number of stones and judge that which player wins.
+		if (JudgeWhetherGameEnds(boardState))
+		{
+			DisplayStones(boardState);
+		}
 	}
 }
