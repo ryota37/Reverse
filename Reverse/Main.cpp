@@ -339,7 +339,7 @@ void Main()
 		DrawStone(boardState);
 
 		// When a player can put no stone, press S to skip the player.
-		if (KeyS.pressed()) SwitchPlayerTurn(playercolor);
+		if (KeyS.down()) SwitchPlayerTurn(playercolor);
 
 		// When the game ends, count the number of stones and judge that which player wins.
 		if (JudgeWhetherGameEnds(boardState))
